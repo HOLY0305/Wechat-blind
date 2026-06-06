@@ -28,27 +28,35 @@ internal sealed class SettingsForm : Form
         _settings = settings;
 
         Text = "微信幕布 - 设置";
-        Size = new Size(380, 320);
+        ClientSize = new Size(820, 620);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
+        Font = new Font("Microsoft YaHei UI", 12F);
+
+        int y = 40;
+        int labelX = 50;
+        int controlX = 230;
+        int rowHeight = 90;
 
         // 启用/禁用
         _chkEnabled = new CheckBox
         {
             Text = "启用遮罩",
             Checked = settings.Enabled,
-            Location = new Point(20, 20),
+            Location = new Point(labelX, y),
             AutoSize = true,
+            Font = new Font("Microsoft YaHei UI", 13F),
         };
+        y += rowHeight;
 
         // 透明度
         var lblOpacity = new Label
         {
             Text = "遮罩透明度：",
-            Location = new Point(20, 60),
+            Location = new Point(labelX, y + 10),
             AutoSize = true,
         };
 
@@ -59,14 +67,15 @@ internal sealed class SettingsForm : Form
             Value = (int)(settings.Opacity * 100),
             TickFrequency = 10,
             LargeChange = 10,
-            Location = new Point(120, 55),
-            Width = 180,
+            Location = new Point(controlX, y),
+            Width = 420,
+            Height = 50,
         };
 
         _lblOpacityValue = new Label
         {
             Text = $"{_trkOpacity.Value}%",
-            Location = new Point(310, 60),
+            Location = new Point(controlX + 440, y + 10),
             AutoSize = true,
         };
 
@@ -74,49 +83,68 @@ internal sealed class SettingsForm : Form
         {
             _lblOpacityValue.Text = $"{_trkOpacity.Value}%";
         };
+        y += rowHeight;
 
         // 快捷键
         var lblHotkey = new Label
         {
             Text = "切换快捷键：",
-            Location = new Point(20, 105),
+            Location = new Point(labelX, y + 12),
             AutoSize = true,
         };
 
         _btnHotkey = new Button
         {
             Text = FormatHotkey(settings.HotKey),
-            Location = new Point(120, 100),
-            Width = 210,
-            Height = 28,
+            Location = new Point(controlX, y + 4),
+            Width = 440,
+            Height = 42,
+            Font = new Font("Microsoft YaHei UI", 12F),
         };
 
         _btnHotkey.Click += OnHotkeyButtonClick;
+        y += rowHeight;
 
         // 开机自启
         _chkAutoStart = new CheckBox
         {
             Text = "开机自动启动",
             Checked = settings.AutoStart,
-            Location = new Point(20, 145),
+            Location = new Point(labelX, y),
             AutoSize = true,
+            Font = new Font("Microsoft YaHei UI", 13F),
         };
+        y += 80;
+
+        // 分隔线
+        var separator = new Label
+        {
+            BorderStyle = BorderStyle.Fixed3D,
+            Location = new Point(labelX, y),
+            Width = ClientSize.Width - labelX * 2,
+            Height = 2,
+        };
+        y += 30;
 
         // 按钮
         var btnOk = new Button
         {
             Text = "确定",
             DialogResult = DialogResult.OK,
-            Location = new Point(160, 240),
-            Width = 90,
+            Location = new Point(ClientSize.Width - 320, y),
+            Width = 130,
+            Height = 50,
+            Font = new Font("Microsoft YaHei UI", 13F),
         };
 
         var btnCancel = new Button
         {
             Text = "取消",
             DialogResult = DialogResult.Cancel,
-            Location = new Point(260, 240),
-            Width = 90,
+            Location = new Point(ClientSize.Width - 170, y),
+            Width = 130,
+            Height = 50,
+            Font = new Font("Microsoft YaHei UI", 13F),
         };
 
         btnOk.Click += OnSave;
@@ -125,7 +153,7 @@ internal sealed class SettingsForm : Form
         {
             _chkEnabled, lblOpacity, _trkOpacity, _lblOpacityValue,
             lblHotkey, _btnHotkey, _chkAutoStart,
-            btnOk, btnCancel,
+            separator, btnOk, btnCancel,
         });
 
         AcceptButton = btnOk;
@@ -134,16 +162,12 @@ internal sealed class SettingsForm : Form
 
     private void OnHotkeyButtonClick(object? sender, EventArgs e)
     {
-        if (_recordingHotkey)
-        {
-            return;
-        }
+        if (_recordingHotkey) return;
 
         _recordingHotkey = true;
         _btnHotkey.Text = "请按下快捷键...";
         _btnHotkey.Focus();
 
-        // 使用 KeyDown 捕获按键组合
         PreviewKeyDown += OnPreviewKeyDown;
     }
 
@@ -151,7 +175,6 @@ internal sealed class SettingsForm : Form
     {
         if (!_recordingHotkey) return;
 
-        // 忽略纯修饰键
         if (e.KeyCode is Keys.ControlKey or Keys.ShiftKey or Keys.Menu or Keys.LWin or Keys.RWin)
         {
             return;
@@ -167,12 +190,11 @@ internal sealed class SettingsForm : Form
 
         _pendingVk = (uint)e.KeyCode;
 
-        var display = FormatHotkey(new HotKeySettings
+        _btnHotkey.Text = FormatHotkey(new HotKeySettings
         {
             Modifiers = ModifiersToString(_pendingModifiers),
             Key = e.KeyCode.ToString(),
         });
-        _btnHotkey.Text = display;
     }
 
     private void OnSave(object? sender, EventArgs e)
