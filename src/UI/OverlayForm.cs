@@ -42,6 +42,24 @@ internal sealed class OverlayForm : Form
         }
     }
 
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        ApplyRoundedCornerPreference();
+    }
+
+    private void ApplyRoundedCornerPreference()
+    {
+        // DWMWA_WINDOW_CORNER_PREFERENCE = 33
+        // DWMWCP_ROUND = 2
+        int preference = 2;
+        DwmApi.DwmSetWindowAttribute(
+            Handle,
+            DwmApi.DwmWindowAttribute.DWMWA_WINDOW_CORNER_PREFERENCE,
+            ref preference,
+            sizeof(int));
+    }
+
     /// <summary>
     /// 设置遮罩透明度
     /// </summary>

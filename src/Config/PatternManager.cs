@@ -6,9 +6,10 @@ namespace WechatBlind.Config;
 /// 图案管理器
 /// 负责管理遮罩图案的加载、保存和删除
 /// </summary>
-internal sealed class PatternManager
+internal sealed class PatternManager : IDisposable
 {
     private readonly string _patternsPath;
+    private readonly Dictionary<string, (Image Image, MemoryStream Stream)> _imageCache = new();
 
     /// <summary>
     /// 预设图案类型
@@ -87,6 +88,14 @@ internal sealed class PatternManager
     public bool DeletePattern(string patternName)
     {
         var filePath = GetPatternFilePath(patternName);
+
+        if (_imageCache.TryGetValue(filePath, out var cached))
+        {
+            cached.Image.Dispose();
+            cached.Stream.Dispose();
+            _imageCache.Remove(filePath);
+        }
+
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -110,9 +119,18 @@ internal sealed class PatternManager
             return CreatePresetPattern(pattern.Preset);
         }
 
-        if (pattern.Type == PatternType.Custom && File.Exists(pattern.FilePath))
+        if (pattern.Type == PatternType.Custom && !string.IsNullOrEmpty(pattern.FilePath) && File.Exists(pattern.FilePath))
         {
-            return Image.FromFile(pattern.FilePath);
+            if (_imageCache.TryGetValue(pattern.FilePath, out var cached))
+            {
+                return cached.Image;
+            }
+
+            var bytes = File.ReadAllBytes(pattern.FilePath);
+            var stream = new MemoryStream(bytes);
+            var image = Image.FromStream(stream);
+            _imageCache[pattern.FilePath] = (image, stream);
+            return image;
         }
 
         return null;
@@ -206,6 +224,16 @@ internal sealed class PatternManager
         {
             Directory.CreateDirectory(_patternsPath);
         }
+    }
+
+    public void Dispose()
+    {
+        foreach (var entry in _imageCache.Values)
+        {
+            entry.Image.Dispose();
+            entry.Stream.Dispose();
+        }
+        _imageCache.Clear();
     }
 }
 
