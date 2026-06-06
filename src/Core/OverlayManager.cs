@@ -62,6 +62,17 @@ internal sealed class OverlayManager : IDisposable
     }
 
     /// <summary>
+    /// 设置遮罩透明度
+    /// </summary>
+    public void SetOverlayOpacity(double opacity)
+    {
+        if (_overlayForm != null && !_overlayForm.IsDisposed)
+        {
+            _overlayForm.SetOpacity(opacity);
+        }
+    }
+
+    /// <summary>
     /// 隐藏遮罩
     /// </summary>
     public void Hide()

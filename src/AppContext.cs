@@ -1,6 +1,7 @@
 using WechatBlind.Config;
 using WechatBlind.Core;
 using WechatBlind.UI;
+using WechatBlind.Win32;
 
 namespace WechatBlind;
 
@@ -14,6 +15,7 @@ internal sealed class AppContext : ApplicationContext
     private readonly OverlayManager _overlayManager;
     private readonly TrayManager _trayManager;
     private readonly SettingsManager _settingsManager;
+    private readonly HotkeyManager _hotkeyManager;
     private readonly System.Windows.Forms.Timer _wechatWatcher;
     private IntPtr _wechatHwnd;
     private bool _isEnabled;
@@ -30,6 +32,7 @@ internal sealed class AppContext : ApplicationContext
         _focusMonitor = new FocusMonitor(wechatHwnd);
         _overlayManager = new OverlayManager(_detector, wechatHwnd);
         _trayManager = new TrayManager();
+        _hotkeyManager = new HotkeyManager();
 
         // 微信关闭时自动隐藏遮罩并等待重启
         _wechatWatcher = new System.Windows.Forms.Timer { Interval = 2000 };
@@ -40,6 +43,13 @@ internal sealed class AppContext : ApplicationContext
         _trayManager.ToggleEnabled += OnToggleEnabled;
         _trayManager.OpenSettings += OnOpenSettings;
         _trayManager.ExitApplication += OnExitApplication;
+        _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+
+        // 注册默认快捷键
+        RegisterHotkey(settings.HotKey);
+
+        // 应用开机自启设置
+        AutoStartManager.SetAutoStart(settings.AutoStart);
 
         Start();
     }
@@ -48,7 +58,7 @@ internal sealed class AppContext : ApplicationContext
     {
         _trayManager.ShowBalloonTip(
             "微信幕布",
-            _isEnabled ? "已启用" : "已禁用 - 双击托盘图标启用",
+            _isEnabled ? "已启用 (Ctrl+Shift+W 切换)" : "已禁用 - 双击托盘图标启用",
             ToolTipIcon.Info);
 
         _trayManager.UpdateStatus(_isEnabled);
@@ -57,7 +67,6 @@ internal sealed class AppContext : ApplicationContext
         {
             _focusMonitor.Start();
 
-            // 启动时如果微信不在前台，显示遮罩
             if (!_focusMonitor.IsFocused())
             {
                 _overlayManager.Show();
@@ -79,6 +88,11 @@ internal sealed class AppContext : ApplicationContext
         }
     }
 
+    private void OnHotkeyPressed(object? sender, EventArgs e)
+    {
+        OnToggleEnabled(sender, !_isEnabled);
+    }
+
     private void OnWeChatUnavailable(object? sender, EventArgs e)
     {
         _focusMonitor.Stop();
@@ -95,7 +109,6 @@ internal sealed class AppContext : ApplicationContext
         var hwnd = _detector.FindWeChatWindow();
         if (hwnd == IntPtr.Zero) return;
 
-        // 微信重新启动了
         _wechatWatcher.Stop();
         _wechatHwnd = hwnd;
         _focusMonitor.UpdateWindowHandle(hwnd);
@@ -143,11 +156,50 @@ internal sealed class AppContext : ApplicationContext
 
     private void OnOpenSettings(object? sender, EventArgs e)
     {
-        _trayManager.ShowBalloonTip("设置", "设置功能开发中...", ToolTipIcon.Info);
+        var settings = _settingsManager.GetSettings();
+
+        using var form = new SettingsForm(settings);
+        form.SettingsSaved += OnSettingsSaved;
+        form.ShowDialog();
+    }
+
+    private void OnSettingsSaved(object? sender, AppSettings settings)
+    {
+        _settingsManager.SaveSettings(settings);
+
+        // 更新快捷键
+        RegisterHotkey(settings.HotKey);
+
+        // 更新开机自启
+        AutoStartManager.SetAutoStart(settings.AutoStart);
+
+        // 应用新的启用状态
+        if (settings.Enabled != _isEnabled)
+        {
+            OnToggleEnabled(this, settings.Enabled);
+        }
+
+        // 应用新的透明度
+        _overlayManager.SetOverlayOpacity(settings.Opacity);
+    }
+
+    private void RegisterHotkey(HotKeySettings hotkey)
+    {
+        uint modifiers = 0;
+        if (hotkey.Modifiers.Contains("Control")) modifiers |= Win32Api.MOD_CONTROL;
+        if (hotkey.Modifiers.Contains("Shift")) modifiers |= Win32Api.MOD_SHIFT;
+        if (hotkey.Modifiers.Contains("Alt")) modifiers |= Win32Api.MOD_ALT;
+        if (hotkey.Modifiers.Contains("Win")) modifiers |= Win32Api.MOD_WIN;
+
+        if (Enum.TryParse<Keys>(hotkey.Key, out var key))
+        {
+            _hotkeyManager.Register(modifiers, (uint)key);
+        }
     }
 
     private void OnExitApplication(object? sender, EventArgs e)
     {
+        _hotkeyManager.Unregister();
         _focusMonitor.Stop();
         _overlayManager.Hide();
         ExitThread();
@@ -159,6 +211,7 @@ internal sealed class AppContext : ApplicationContext
         {
             _wechatWatcher?.Stop();
             _wechatWatcher?.Dispose();
+            _hotkeyManager?.Dispose();
             _focusMonitor?.Dispose();
             _overlayManager?.Dispose();
             _trayManager?.Dispose();
