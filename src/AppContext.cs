@@ -160,11 +160,18 @@ internal sealed class AppContext : ApplicationContext
     {
         var settings = _settingsManager.GetSettings();
 
-        using var form = new SettingsForm(settings);
-        form.SettingsSaved += OnSettingsSaved;
-        form.SettingsChanged += OnSettingsChanged;
-        form.ShowDialog();
+        var window = new SettingsWindow(settings);
+        window.SettingsSaved += OnSettingsSaved;
+        window.SettingsChanged += OnSettingsChanged;
+
+        // WPF 窗口需要手动设置 Owner 才能正确作为模态对话框
+        var helper = new System.Windows.Interop.WindowInteropHelper(window);
+        helper.Owner = GetActiveWindow();
+        window.ShowDialog();
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr GetActiveWindow();
 
     /// <summary>
     /// 设置实时变化时更新遮罩（用于实时预览）

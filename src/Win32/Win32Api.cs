@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace WechatBlind.Win32;
 
@@ -162,6 +163,20 @@ internal static class Win32Api
     /// <returns>该坐标处最顶层的窗口句柄</returns>
     [DllImport(User32, SetLastError = true)]
     public static extern IntPtr WindowFromPoint(POINT point);
+
+    /// <summary>
+    /// 枚举所有顶层窗口
+    /// </summary>
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport(User32, SetLastError = true)]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport(User32, SetLastError = true)]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport(User32, SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
     #endregion
 

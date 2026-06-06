@@ -31,6 +31,8 @@ internal static class DwmApi
         DWMWA_FORCE_VISIBLE_REDUCTION = 7,
         /// <summary>深色模式（Windows 10 1903+）</summary>
         DWMWA_USE_IMMERSIVE_DARK_MODE = 20,
+        /// <summary>扩展框架边界（排除阴影）</summary>
+        DWMWA_EXTENDED_FRAME_BOUNDS = 9,
         /// <summary>窗口圆角</summary>
         DWMWA_WINDOW_CORNER_PREFERENCE = 33,
         /// <summary>边框颜色</summary>
@@ -100,6 +102,13 @@ internal static class DwmApi
         IntPtr hwnd,
         DwmWindowAttribute dwAttribute,
         ref int pvAttribute,
+        uint cbAttribute);
+
+    [DllImport(Dwmapi, SetLastError = true)]
+    public static extern int DwmGetWindowAttribute(
+        IntPtr hwnd,
+        DwmWindowAttribute dwAttribute,
+        out Win32Api.RECT pvAttribute,
         uint cbAttribute);
 
     [DllImport("user32.dll")]
