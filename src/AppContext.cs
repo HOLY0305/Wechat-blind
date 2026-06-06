@@ -160,7 +160,20 @@ internal sealed class AppContext : ApplicationContext
 
         using var form = new SettingsForm(settings);
         form.SettingsSaved += OnSettingsSaved;
+        form.SettingsChanged += OnSettingsChanged;
         form.ShowDialog();
+    }
+
+    /// <summary>
+    /// 设置实时变化时更新遮罩（用于实时预览）
+    /// </summary>
+    private void OnSettingsChanged(object? sender, AppSettings settings)
+    {
+        // 实时更新遮罩透明度
+        _overlayManager.SetOverlayOpacity(settings.Opacity);
+
+        // 实时更新遮罩模糊程度
+        _overlayManager.SetOverlayBlur(settings.BlurAmount);
     }
 
     private void OnSettingsSaved(object? sender, AppSettings settings)
@@ -181,6 +194,9 @@ internal sealed class AppContext : ApplicationContext
 
         // 应用新的透明度
         _overlayManager.SetOverlayOpacity(settings.Opacity);
+
+        // 应用新的模糊程度
+        _overlayManager.SetOverlayBlur(settings.BlurAmount);
     }
 
     private void RegisterHotkey(HotKeySettings hotkey)

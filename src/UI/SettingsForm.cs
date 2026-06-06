@@ -12,6 +12,8 @@ internal sealed class SettingsForm : Form
     private readonly CheckBox _chkEnabled;
     private readonly TrackBar _trkOpacity;
     private readonly Label _lblOpacityValue;
+    private readonly TrackBar _trkBlur;
+    private readonly Label _lblBlurValue;
     private readonly Button _btnHotkey;
     private readonly CheckBox _chkAutoStart;
     private bool _recordingHotkey;
@@ -22,6 +24,11 @@ internal sealed class SettingsForm : Form
     /// 设置保存后触发
     /// </summary>
     public event EventHandler<AppSettings>? SettingsSaved;
+
+    /// <summary>
+    /// 设置实时变化时触发（用于实时预览）
+    /// </summary>
+    public event EventHandler<AppSettings>? SettingsChanged;
 
     public SettingsForm(AppSettings settings)
     {
@@ -50,6 +57,7 @@ internal sealed class SettingsForm : Form
             AutoSize = true,
             Font = new Font("Microsoft YaHei UI", 13F),
         };
+        _chkEnabled.CheckedChanged += (s, e) => OnSettingsChanged();
         y += rowHeight;
 
         // 透明度
@@ -82,6 +90,41 @@ internal sealed class SettingsForm : Form
         _trkOpacity.ValueChanged += (s, e) =>
         {
             _lblOpacityValue.Text = $"{_trkOpacity.Value}%";
+            OnSettingsChanged();
+        };
+        y += rowHeight;
+
+        // 模糊程度
+        var lblBlur = new Label
+        {
+            Text = "模糊程度：",
+            Location = new Point(labelX, y + 10),
+            AutoSize = true,
+        };
+
+        _trkBlur = new TrackBar
+        {
+            Minimum = 0,
+            Maximum = 100,
+            Value = settings.BlurAmount,
+            TickFrequency = 10,
+            LargeChange = 10,
+            Location = new Point(controlX, y),
+            Width = 420,
+            Height = 50,
+        };
+
+        _lblBlurValue = new Label
+        {
+            Text = $"{_trkBlur.Value}%",
+            Location = new Point(controlX + 440, y + 10),
+            AutoSize = true,
+        };
+
+        _trkBlur.ValueChanged += (s, e) =>
+        {
+            _lblBlurValue.Text = $"{_trkBlur.Value}%";
+            OnSettingsChanged();
         };
         y += rowHeight;
 
@@ -152,12 +195,37 @@ internal sealed class SettingsForm : Form
         Controls.AddRange(new Control[]
         {
             _chkEnabled, lblOpacity, _trkOpacity, _lblOpacityValue,
+            lblBlur, _trkBlur, _lblBlurValue,
             lblHotkey, _btnHotkey, _chkAutoStart,
             separator, btnOk, btnCancel,
         });
 
         AcceptButton = btnOk;
         CancelButton = btnCancel;
+    }
+
+    /// <summary>
+    /// 获取当前设置（用于实时预览）
+    /// </summary>
+    public AppSettings GetCurrentSettings()
+    {
+        return new AppSettings
+        {
+            Enabled = _chkEnabled.Checked,
+            Opacity = _trkOpacity.Value / 100.0,
+            BlurAmount = _trkBlur.Value,
+            AutoStart = _chkAutoStart.Checked,
+            HotKey = new HotKeySettings
+            {
+                Modifiers = _settings.HotKey.Modifiers,
+                Key = _settings.HotKey.Key,
+            },
+        };
+    }
+
+    private void OnSettingsChanged()
+    {
+        SettingsChanged?.Invoke(this, GetCurrentSettings());
     }
 
     private void OnHotkeyButtonClick(object? sender, EventArgs e)
@@ -201,6 +269,7 @@ internal sealed class SettingsForm : Form
     {
         _settings.Enabled = _chkEnabled.Checked;
         _settings.Opacity = _trkOpacity.Value / 100.0;
+        _settings.BlurAmount = _trkBlur.Value;
         _settings.AutoStart = _chkAutoStart.Checked;
 
         if (_pendingModifiers != 0 || _pendingVk != 0)

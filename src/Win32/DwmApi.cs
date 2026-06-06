@@ -112,14 +112,18 @@ internal static class DwmApi
     /// </summary>
     /// <param name="hwnd">窗口句柄</param>
     /// <param name="opacity">透明度（0-255）</param>
-    /// <param name="gradientColor">渐变颜色（ARGB，0 表示默认）</param>
+    /// <param name="blurAmount">模糊程度（0-100）</param>
     /// <returns>是否成功</returns>
-    public static bool EnableBlur(IntPtr hwnd, int opacity = 180, int gradientColor = 0)
+    public static bool EnableBlur(IntPtr hwnd, int opacity = 180, int blurAmount = 50)
     {
+        // 将模糊程度转换为 GradientColor（0-100 映射到 0-255）
+        int gradientIntensity = (int)(blurAmount * 2.55);
+        int gradientColor = (opacity << 24) | (gradientIntensity << 16) | (gradientIntensity << 8) | gradientIntensity;
+
         var accent = new AccentPolicy
         {
             AccentState = AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND,
-            GradientColor = gradientColor != 0 ? gradientColor : ((opacity << 24) | 0xFFFFFF), // 半透明白色
+            GradientColor = gradientColor,
         };
 
         var accentPtr = Marshal.AllocHGlobal(Marshal.SizeOf(accent));

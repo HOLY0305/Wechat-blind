@@ -76,6 +76,17 @@ internal sealed class OverlayManager : IDisposable
     }
 
     /// <summary>
+    /// 设置遮罩模糊程度
+    /// </summary>
+    public void SetOverlayBlur(int blurAmount)
+    {
+        if (_overlayForm != null && !_overlayForm.IsDisposed)
+        {
+            _overlayForm.SetBlurAmount(blurAmount);
+        }
+    }
+
+    /// <summary>
     /// 隐藏遮罩
     /// </summary>
     public void Hide()

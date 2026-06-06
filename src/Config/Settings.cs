@@ -19,6 +19,11 @@ internal sealed class AppSettings
     public double Opacity { get; set; } = 0.7;
 
     /// <summary>
+    /// 模糊程度（0-100）
+    /// </summary>
+    public int BlurAmount { get; set; } = 50;
+
+    /// <summary>
     /// 是否开机自启
     /// </summary>
     public bool AutoStart { get; set; } = false;

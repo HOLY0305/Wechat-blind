@@ -9,6 +9,7 @@ namespace WechatBlind.UI;
 internal sealed class OverlayForm : Form
 {
     private byte _alpha;
+    private int _blurAmount = 50;
 
     public OverlayForm()
     {
@@ -52,6 +53,19 @@ internal sealed class OverlayForm : Form
         }
     }
 
+    /// <summary>
+    /// 设置模糊程度
+    /// </summary>
+    /// <param name="blurAmount">模糊程度 0-100</param>
+    public void SetBlurAmount(int blurAmount)
+    {
+        _blurAmount = blurAmount;
+        if (IsHandleCreated)
+        {
+            ApplyBlur();
+        }
+    }
+
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
@@ -62,12 +76,17 @@ internal sealed class OverlayForm : Form
         }
 
         ApplyAlpha();
-        DwmApi.EnableBlur(Handle, _alpha);
+        ApplyBlur();
     }
 
     private void ApplyAlpha()
     {
         Win32Api.SetLayeredWindowAttributes(Handle, 0, _alpha, Win32Api.LWA_ALPHA);
+    }
+
+    private void ApplyBlur()
+    {
+        DwmApi.EnableBlur(Handle, _alpha, _blurAmount);
     }
 
     /// <summary>
