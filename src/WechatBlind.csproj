@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\assets\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="assets" />
+    <EmbeddedResource Include="..\assets\icon.ico" LogicalName="icon.ico" />
   </ItemGroup>
 
 </Project>

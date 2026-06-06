@@ -40,14 +40,17 @@ internal sealed class TrayManager : IDisposable
 
     private NotifyIcon CreateTrayIcon()
     {
-        // 加载自定义图标，如果失败则使用系统图标
+        // 从嵌入资源加载图标，失败则使用系统图标
         Icon trayIcon;
         try
         {
-            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "icon.ico");
-            if (File.Exists(iconPath))
+            var stream = typeof(TrayManager).Assembly.GetManifestResourceStream("icon.ico");
+            if (stream != null)
             {
-                trayIcon = new Icon(iconPath, 16, 16);
+                using var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                ms.Position = 0;
+                trayIcon = new Icon(ms, 16, 16);
             }
             else
             {
