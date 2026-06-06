@@ -38,10 +38,29 @@ internal sealed class TrayManager : IDisposable
 
     private NotifyIcon CreateTrayIcon()
     {
+        // 加载自定义图标，如果失败则使用系统图标
+        Icon trayIcon;
+        try
+        {
+            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets", "icon.ico");
+            if (File.Exists(iconPath))
+            {
+                trayIcon = new Icon(iconPath, 16, 16);
+            }
+            else
+            {
+                trayIcon = SystemIcons.Application;
+            }
+        }
+        catch
+        {
+            trayIcon = SystemIcons.Application;
+        }
+
         var icon = new NotifyIcon
         {
             Text = "微信幕布 - 双击切换启用状态",
-            Icon = SystemIcons.Application,
+            Icon = trayIcon,
             Visible = true,
             ContextMenuStrip = _contextMenu,
         };

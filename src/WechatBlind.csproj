@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WechatBlind</RootNamespace>
     <AssemblyName>WechatBlind</AssemblyName>
+    <ApplicationIcon>..\assets\icon.ico</ApplicationIcon>
 
     <!-- 单文件发布配置（仅在 dotnet publish 时生效） -->
     <PublishSingleFile>true</PublishSingleFile>
