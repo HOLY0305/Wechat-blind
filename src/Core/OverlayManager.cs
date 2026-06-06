@@ -44,6 +44,9 @@ internal sealed class OverlayManager : IDisposable
         if (!EnsureWeChatValid()) return;
         if (!EnsureWeChatVisible()) return;
 
+        // 微信被其他窗口遮挡时不显示
+        if (IsWeChatCovered()) return;
+
         var rect = _detector.GetWindowPosition(_wechatHwnd);
         if (rect == Rectangle.Empty) return;
 
@@ -112,6 +115,16 @@ internal sealed class OverlayManager : IDisposable
             return;
         }
 
+        // 微信窗口被其他窗口遮挡时隐藏遮罩
+        if (IsWeChatCovered())
+        {
+            if (_overlayForm?.Visible == true)
+            {
+                _overlayForm.Hide();
+            }
+            return;
+        }
+
         // 同步位置
         var rect = _detector.GetWindowPosition(_wechatHwnd);
         if (rect == Rectangle.Empty) return;
@@ -137,6 +150,37 @@ internal sealed class OverlayManager : IDisposable
         {
             _overlayForm?.ShowAboveWindow(_wechatHwnd);
         }
+    }
+
+    /// <summary>
+    /// 检测微信窗口中心点是否被其他窗口遮挡
+    /// </summary>
+    private bool IsWeChatCovered()
+    {
+        var rect = _detector.GetWindowPosition(_wechatHwnd);
+        if (rect == Rectangle.Empty) return true;
+
+        var centerPoint = new Win32Api.POINT
+        {
+            X = rect.X + rect.Width / 2,
+            Y = rect.Y + rect.Height / 2,
+        };
+
+        var windowAtCenter = Win32Api.WindowFromPoint(centerPoint);
+
+        // 中心点处没有窗口，或就是微信本身 → 未被遮挡
+        if (windowAtCenter == IntPtr.Zero || windowAtCenter == _wechatHwnd)
+        {
+            return false;
+        }
+
+        // 中心点处的窗口是遮罩本身 → 未被遮挡
+        if (_overlayForm != null && windowAtCenter == _overlayForm.Handle)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private bool EnsureWeChatValid()

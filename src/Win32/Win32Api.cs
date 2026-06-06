@@ -155,6 +155,14 @@ internal static class Win32Api
     [DllImport(User32, SetLastError = true)]
     public static extern bool GetCursorPos(out POINT lpPoint);
 
+    /// <summary>
+    /// 获取指定屏幕坐标处的窗口句柄
+    /// </summary>
+    /// <param name="point">屏幕坐标</param>
+    /// <returns>该坐标处最顶层的窗口句柄</returns>
+    [DllImport(User32, SetLastError = true)]
+    public static extern IntPtr WindowFromPoint(POINT point);
+
     #endregion
 
     #region 快捷键
