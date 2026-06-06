@@ -1,111 +1,104 @@
 # 微信幕布 (WeChat Blind)
 
-微信窗口隐私保护工具 - 当微信失去焦点时自动显示磨砂遮罩
+微信窗口隐私保护工具 - 当微信失去焦点时自动显示磨砂遮罩，保护你的聊天隐私。
 
 ## 功能特性
 
-- 自动检测微信窗口
-- 焦点监控：微信失去焦点时显示遮罩
-- 系统托盘：最小化到托盘运行
-- 快捷键：Ctrl+Shift+W 切换遮罩
-- 轻量级：内存占用 <10MB
+- **隐私遮罩** — 微信失去焦点时自动显示磨砂遮罩
+- **鼠标识别** — 鼠标悬停在微信窗口上方时自动隐藏遮罩
+- **自定义图案** — 支持预设图案和自定义图片作为遮罩
+- **实时预览** — 设置页面实时预览透明度、模糊度和图案效果
+- **全局快捷键** — `Ctrl+Shift+W` 切换遮罩（可自定义）
+- **系统托盘** — 最小化到托盘运行，双击切换启用/禁用
+- **开机自启** — 可选开机自动启动
 
 ## 环境要求
 
 - Windows 10/11
-- .NET 6.0 Runtime 或更高版本
+- 微信（支持传统版、Qt 版、Tauri 版）
 
 ## 安装使用
 
-### 方式一：直接运行（推荐）
+### 方式一：下载 Release（推荐）
 
-1. 下载 `WechatBlind.exe`
-2. 双击运行
-3. 程序会自动检测微信窗口并最小化到托盘
+1. 下载 `WechatBlind.exe`（单文件，无需安装）
+2. 先启动微信，再运行本程序
+3. 程序自动检测微信窗口并最小化到托盘
 
 ### 方式二：从源码构建
 
 ```bash
-# 安装 .NET SDK
-# 下载地址：https://dotnet.microsoft.com/download/dotnet/6.0
+# 需要 .NET 6.0 SDK
+# 下载：https://dotnet.microsoft.com/download/dotnet/6.0
 
-# 克隆项目
-git clone <repository-url>
-cd Wechat-blind
+git clone https://github.com/HOLY0305/Wechat-blind.git
+cd Wechat-blind/src
 
-# 构建
-cd src
-dotnet build
-
-# 运行
+# 构建运行
 dotnet run
 
 # 发布单文件 exe
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ../publish
 ```
 
 ## 使用说明
 
 1. 启动微信
 2. 运行微信幕布
-3. 程序会自动检测微信窗口并开始监控
-4. 当你切换到其他窗口时，微信窗口会显示磨砂遮罩
-5. 点击微信窗口，遮罩自动消失
-
-### 托盘图标
-
-- **双击**：切换启用/禁用
-- **右键**：打开菜单
+3. 当你切换到其他窗口时，微信窗口自动显示磨砂遮罩
+4. 将鼠标移到微信窗口上，遮罩自动消失
+5. 右键托盘图标可打开设置页面
 
 ### 快捷键
 
-- `Ctrl+Shift+W`：切换遮罩显示/隐藏
+| 快捷键 | 功能 |
+|--------|------|
+| `Ctrl+Shift+W` | 切换遮罩启用/禁用 |
 
-## 配置文件
+### 设置页面
 
-配置文件位于：`%APPDATA%\WechatBlind\settings.json`
+右键托盘图标 → 设置，可调整：
+- 遮罩透明度
+- 模糊程度
+- 遮罩图案（预设/自定义图片）
+- 图案透明度
+- 切换快捷键
+- 开机自启
 
-```json
-{
-  "Enabled": true,
-  "Opacity": 0.7,
-  "AutoStart": false,
-  "HotKey": {
-    "Modifiers": "Control,Shift",
-    "Key": "W"
-  }
-}
-```
-
-## 开发说明
-
-### 项目结构
+## 项目结构
 
 ```
 src/
-├── Program.cs              # 入口点
-├── AppContext.cs            # 应用上下文
-├── Win32/
-│   └── Win32Api.cs         # Windows API 声明
+├── Program.cs                  # 入口点
+├── AppContext.cs                # 应用上下文（组件生命周期管理）
 ├── Core/
-│   ├── WindowDetector.cs   # 微信窗口检测
-│   ├── FocusMonitor.cs     # 焦点监控
-│   └── OverlayManager.cs   # 遮罩管理
+│   ├── WindowDetector.cs       # 微信窗口检测（支持 Tauri/Qt/旧版）
+│   ├── FocusMonitor.cs         # 焦点状态监控
+│   ├── OverlayManager.cs       # 遮罩窗口管理
+│   └── HotkeyManager.cs        # 全局快捷键
 ├── UI/
-│   ├── OverlayForm.cs      # 遮罩窗口
-│   └── TrayManager.cs      # 系统托盘
-└── Config/
-    └── Settings.cs         # 配置管理
+│   ├── SettingsWindow.xaml     # WPF 设置页面（Apple 风格）
+│   ├── SettingsWindow.xaml.cs  # 设置页面逻辑
+│   ├── OverlayForm.cs          # 磨砂遮罩窗口
+│   ├── TrayManager.cs          # 系统托盘
+│   ├── ToggleSwitch.cs         # iOS 风格开关控件
+│   ├── RoundedPanel.cs         # 圆角面板控件
+│   └── PatternToImageSourceConverter.cs  # 图案预览转换器
+├── Config/
+│   ├── Settings.cs             # 设置数据模型 + JSON 序列化
+│   ├── PatternManager.cs       # 图案管理（预设+自定义）
+│   └── AutoStartManager.cs     # 开机自启管理
+└── Win32/
+    ├── Win32Api.cs             # Win32 API P/Invoke
+    └── DwmApi.cs               # DWM API P/Invoke
 ```
 
-### 开发流程
+## 技术栈
 
-每个功能完成后必须：
-1. 编写/运行测试
-2. 代码审查
-3. 提交代码（Conventional Commits）
-
-详细流程见 `docs/development.md`
+- C# / .NET 6.0 / Windows Forms
+- WPF（设置页面）
+- Win32 API（窗口检测、焦点监控、全局快捷键）
+- DWM API（窗口模糊效果、圆角）
 
 ## 许可证
 
