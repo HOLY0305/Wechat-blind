@@ -101,23 +101,16 @@ WeChat Blind / 微信隐私幕布
 
 | 问题 | 严重程度 | 状态 | 说明 |
 |------|----------|------|------|
+| 遮罩显示在微信窗口下方 | CRITICAL | 待修复 | Z-order 管理有误，遮罩无法覆盖微信窗口 |
+| 遮罩位置不同步 | HIGH | 待修复 | 微信窗口移动/缩放后遮罩不跟随 |
+| DWM 模糊被 OnPaint 覆盖 | HIGH | 待修复 | OnPaint 绘制不透明背景，模糊效果无效 |
+| TopMost 属性矛盾 | MEDIUM | 待修复 | 构造函数 TopMost=false 与 CreateParams WS_EX_TOPMOST 冲突 |
+| WeChat 关闭后遮罩卡住 | MEDIUM | 待修复 | 无后台监控 WeChat 进程存活状态 |
 | DPI 缩放偏移 | MEDIUM | 待修复 | GetWindowRect 返回物理像素，WinForms 用逻辑坐标 |
+| 微信最小化时遮罩未隐藏 | LOW | 待修复 | 遮罩仍覆盖在最小化的微信上方 |
 | 快捷键未实现 | HIGH | 未实现 | 需求要求 Ctrl+Shift+W 切换 |
 | 设置面板未实现 | MEDIUM | 未实现 | 托盘菜单"设置"只弹提示 |
 | 开机自启未实现 | MEDIUM | 未实现 | Settings 中有 AutoStart 字段但未接入 |
-
-### 已修复
-
-| 问题 | 修复版本 | 说明 |
-|------|----------|------|
-| 遮罩显示在微信窗口下方 | v1.0.1 | 重构 OverlayForm，统一使用 HWND_TOPMOST |
-| 遮罩位置不同步 | v1.0.1 | 添加 100ms 定时器持续同步位置 |
-| DWM 模糊被 OnPaint 覆盖 | v1.0.1 | 移除 OnPaint 自绘，改用纯 DWM 亚克力模糊 |
-| TopMost 属性矛盾 | v1.0.1 | 移除 CreateParams 中 WS_EX_TOPMOST，统一用 TopMost=true |
-| WeChat 关闭后遮罩卡住 | v1.0.1 | 添加 WeChatUnavailable 事件 + 2s 轮询等待重启 |
-| 微信最小化时遮罩未隐藏 | v1.0.1 | sync 定时器中检查 IsIconic |
-| 遮罩遮挡其他窗口 | v1.0.2 | 添加 WindowFromPoint 检测微信是否被遮挡 |
-| 鼠标悬停不隐藏遮罩 | v1.0.2 | 添加 IsMouseOverWeChat 检测，鼠标在微信区域时隐藏遮罩 |
 
 ## 7. 未来扩展（暂不实现）
 
