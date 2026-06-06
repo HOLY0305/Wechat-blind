@@ -115,6 +115,16 @@ internal sealed class OverlayManager : IDisposable
             return;
         }
 
+        // 鼠标悬停在微信窗口上方时隐藏遮罩
+        if (IsMouseOverWeChat())
+        {
+            if (_overlayForm?.Visible == true)
+            {
+                _overlayForm.Hide();
+            }
+            return;
+        }
+
         // 微信窗口被其他窗口遮挡时隐藏遮罩
         if (IsWeChatCovered())
         {
@@ -150,6 +160,22 @@ internal sealed class OverlayManager : IDisposable
         {
             _overlayForm?.ShowAboveWindow(_wechatHwnd);
         }
+    }
+
+    /// <summary>
+    /// 检测鼠标是否在微信窗口区域内
+    /// </summary>
+    private bool IsMouseOverWeChat()
+    {
+        if (!Win32Api.GetCursorPos(out var cursorPos)) return false;
+
+        var rect = _detector.GetWindowPosition(_wechatHwnd);
+        if (rect == Rectangle.Empty) return false;
+
+        return cursorPos.X >= rect.X &&
+               cursorPos.X <= rect.X + rect.Width &&
+               cursorPos.Y >= rect.Y &&
+               cursorPos.Y <= rect.Y + rect.Height;
     }
 
     /// <summary>
