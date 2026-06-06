@@ -99,15 +99,7 @@ WeChat Blind / 微信隐私幕布
 
 ## 6. 已知问题
 
-### 待修复
-
-| 问题 | 严重程度 | 说明 |
-|------|----------|------|
-| 快捷键未实现 | HIGH | 需求要求 Ctrl+Shift+W 切换 |
-| 设置面板未实现 | MEDIUM | 托盘菜单"设置"只弹提示 |
-| 开机自启未实现 | MEDIUM | Settings 中有 AutoStart 字段但未接入 |
-
-### 已修复
+### 已修复 / 已实现
 
 | 问题 | 修复版本 | 说明 |
 |------|----------|------|
@@ -119,6 +111,9 @@ WeChat Blind / 微信隐私幕布
 | 微信最小化时遮罩未隐藏 | v1.0.1 | sync 定时器中检查 IsIconic |
 | 遮罩遮挡其他窗口 | v1.0.2 | 添加 WindowFromPoint 检测微信是否被遮挡 |
 | 鼠标悬停不隐藏遮罩 | v1.0.2 | 添加 IsMouseOverWeChat 检测 |
+| 快捷键切换 | v1.0.3 | HotkeyManager + RegisterHotKey，默认 Ctrl+Shift+W |
+| 设置面板 | v1.0.3 | SettingsForm 支持透明度/快捷键/开机自启配置 |
+| 开机自启 | v1.0.3 | AutoStartManager 写入注册表 HKCU\...\Run |
 
 ## 7. 未来扩展（暂不实现）
 

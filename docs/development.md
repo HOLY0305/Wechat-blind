@@ -607,10 +607,10 @@ main (稳定版本)
 | 遮罩遮挡其他窗口 | `HWND_TOPMOST` 使遮罩在所有窗口之上 | 添加 `WindowFromPoint` 检测微信是否被遮挡 | v1.0.2 |
 | 鼠标悬停不隐藏遮罩 | 无鼠标位置检测 | 添加 `IsMouseOverWeChat` 检测 | v1.0.2 |
 
-### 11.2 待实现
+### 11.2 已实现
 
-| 功能 | 说明 | 状态 |
+| 功能 | 说明 | 版本 |
 |------|------|------|
-| 快捷键切换 | 使用 `RegisterHotKey` 注册 Ctrl+Shift+W 全局快捷键 | 未实现 |
-| 设置面板 | 创建 SettingsForm，支持透明度/模糊度/开机自启配置 | 未实现 |
-| 开机自启 | 写入 `HKCU\...\Run` 注册表 | 未实现 |
+| 快捷键切换 | `HotkeyManager` + `RegisterHotKey`，默认 Ctrl+Shift+W | v1.0.3 |
+| 设置面板 | `SettingsForm` 支持启用/透明度/快捷键/开机自启 | v1.0.3 |
+| 开机自启 | `AutoStartManager` 写入 `HKCU\...\Run` 注册表 | v1.0.3 |
