@@ -55,6 +55,9 @@ internal sealed class OverlayManager : IDisposable
         SyncOverlayPosition(rect);
         _overlayForm!.ShowAboveWindow(_wechatHwnd);
 
+        // 强制刷新位置，确保第一次显示时大小正确
+        ForceRefreshPosition();
+
         if (!_syncTimer.Enabled)
         {
             _syncTimer.Start();
@@ -250,6 +253,27 @@ internal sealed class OverlayManager : IDisposable
 
         _overlayForm.Location = new Point(rect.X, rect.Y);
         _overlayForm.Size = new Size(rect.Width, rect.Height);
+        _lastWeChatRect = rect;
+    }
+
+    /// <summary>
+    /// 强制刷新遮罩位置
+    /// 解决启动时遮罩大小不正确的问题
+    /// </summary>
+    private void ForceRefreshPosition()
+    {
+        if (_overlayForm == null || !_overlayForm.Visible) return;
+
+        var rect = _detector.GetWindowPosition(_wechatHwnd);
+        if (rect == Rectangle.Empty) return;
+
+        // 使用 Win32 API 直接设置窗口位置和大小
+        Win32Api.SetWindowPos(
+            _overlayForm.Handle,
+            Win32Api.HWND_TOPMOST,
+            rect.X, rect.Y, rect.Width, rect.Height,
+            Win32Api.SWP_NOACTIVATE | Win32Api.SWP_SHOWWINDOW | Win32Api.SWP_FRAMECHANGED);
+
         _lastWeChatRect = rect;
     }
 
