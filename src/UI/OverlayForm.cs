@@ -10,6 +10,8 @@ internal sealed class OverlayForm : Form
 {
     private byte _alpha;
     private int _blurAmount = 50;
+    private Image? _patternImage;
+    private double _patternOpacity = 1.0;
 
     public OverlayForm()
     {
@@ -66,6 +68,22 @@ internal sealed class OverlayForm : Form
         }
     }
 
+    /// <summary>
+    /// 设置遮罩图案
+    /// </summary>
+    /// <param name="patternImage">图案图片，null 表示无图案</param>
+    /// <param name="patternOpacity">图案透明度 0.0-1.0</param>
+    public void SetPattern(Image? patternImage, double patternOpacity = 1.0)
+    {
+        _patternImage = patternImage;
+        _patternOpacity = patternOpacity;
+
+        if (IsHandleCreated && Visible)
+        {
+            Invalidate();
+        }
+    }
+
     protected override void OnShown(EventArgs e)
     {
         base.OnShown(e);
@@ -112,6 +130,38 @@ internal sealed class OverlayForm : Form
 
     protected override void Dispose(bool disposing)
     {
+        if (disposing)
+        {
+            _patternImage?.Dispose();
+            _patternImage = null;
+        }
         base.Dispose(disposing);
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+
+        if (_patternImage == null) return;
+
+        // 使用图案透明度
+        var matrix = new System.Drawing.Imaging.ColorMatrix
+        {
+            Matrix33 = (float)_patternOpacity,
+        };
+
+        using var attributes = new System.Drawing.Imaging.ImageAttributes();
+        attributes.SetColorMatrix(matrix);
+
+        // 绘制图案（平铺）
+        var imageRect = new Rectangle(0, 0, _patternImage.Width, _patternImage.Height);
+        e.Graphics.DrawImage(
+            _patternImage,
+            new Rectangle(0, 0, Width, Height),
+            0, 0,
+            _patternImage.Width,
+            _patternImage.Height,
+            GraphicsUnit.Pixel,
+            attributes);
     }
 }

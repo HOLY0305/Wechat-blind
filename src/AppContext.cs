@@ -15,6 +15,7 @@ internal sealed class AppContext : ApplicationContext
     private readonly OverlayManager _overlayManager;
     private readonly TrayManager _trayManager;
     private readonly SettingsManager _settingsManager;
+    private readonly PatternManager _patternManager;
     private readonly HotkeyManager _hotkeyManager;
     private readonly System.Windows.Forms.Timer _wechatWatcher;
     private IntPtr _wechatHwnd;
@@ -25,6 +26,7 @@ internal sealed class AppContext : ApplicationContext
         _wechatHwnd = wechatHwnd;
 
         _settingsManager = new SettingsManager();
+        _patternManager = new PatternManager();
         var settings = _settingsManager.GetSettings();
         _isEnabled = settings.Enabled;
 
@@ -174,6 +176,9 @@ internal sealed class AppContext : ApplicationContext
 
         // 实时更新遮罩模糊程度
         _overlayManager.SetOverlayBlur(settings.BlurAmount);
+
+        // 实时更新遮罩图案
+        UpdateOverlayPattern(settings);
     }
 
     private void OnSettingsSaved(object? sender, AppSettings settings)
@@ -197,6 +202,28 @@ internal sealed class AppContext : ApplicationContext
 
         // 应用新的模糊程度
         _overlayManager.SetOverlayBlur(settings.BlurAmount);
+
+        // 应用新的图案
+        UpdateOverlayPattern(settings);
+    }
+
+    /// <summary>
+    /// 更新遮罩图案
+    /// </summary>
+    private void UpdateOverlayPattern(AppSettings settings)
+    {
+        Image? patternImage = null;
+
+        if (settings.PatternType == "Preset" && Enum.TryParse<PatternManager.PresetPattern>(settings.PresetPattern, out var preset))
+        {
+            patternImage = _patternManager.LoadPattern(new PatternInfo { Type = PatternType.Preset, Preset = preset });
+        }
+        else if (settings.PatternType == "Custom" && !string.IsNullOrEmpty(settings.CustomPatternPath))
+        {
+            patternImage = _patternManager.LoadPattern(new PatternInfo { Type = PatternType.Custom, FilePath = settings.CustomPatternPath });
+        }
+
+        _overlayManager.SetOverlayPattern(patternImage, settings.PatternOpacity);
     }
 
     private void RegisterHotkey(HotKeySettings hotkey)

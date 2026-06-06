@@ -24,6 +24,26 @@ internal sealed class AppSettings
     public int BlurAmount { get; set; } = 50;
 
     /// <summary>
+    /// 遮罩图案类型（None, Preset, Custom）
+    /// </summary>
+    public string PatternType { get; set; } = "None";
+
+    /// <summary>
+    /// 预设图案名称
+    /// </summary>
+    public string PresetPattern { get; set; } = "None";
+
+    /// <summary>
+    /// 自定义图案文件路径
+    /// </summary>
+    public string? CustomPatternPath { get; set; }
+
+    /// <summary>
+    /// 图案透明度（0.0 - 1.0）
+    /// </summary>
+    public double PatternOpacity { get; set; } = 1.0;
+
+    /// <summary>
     /// 是否开机自启
     /// </summary>
     public bool AutoStart { get; set; } = false;

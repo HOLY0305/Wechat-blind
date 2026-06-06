@@ -87,6 +87,17 @@ internal sealed class OverlayManager : IDisposable
     }
 
     /// <summary>
+    /// 设置遮罩图案
+    /// </summary>
+    public void SetOverlayPattern(Image? patternImage, double patternOpacity = 1.0)
+    {
+        if (_overlayForm != null && !_overlayForm.IsDisposed)
+        {
+            _overlayForm.SetPattern(patternImage, patternOpacity);
+        }
+    }
+
+    /// <summary>
     /// 隐藏遮罩
     /// </summary>
     public void Hide()
