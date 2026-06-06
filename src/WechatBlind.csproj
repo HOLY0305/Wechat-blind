@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>WechatBlind</RootNamespace>
+    <AssemblyName>WechatBlind</AssemblyName>
+
+    <!-- 单文件发布配置（仅在 dotnet publish 时生效） -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishReadyToRun>true</PublishReadyToRun>
+
+    <!-- 版本信息 -->
+    <Version>1.0.0</Version>
+    <Authors>WechatBlind</Authors>
+    <Description>微信窗口隐私保护工具 - 当微信失去焦点时自动显示磨砂遮罩</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
