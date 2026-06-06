@@ -594,32 +594,29 @@ main (稳定版本)
 
 ## 11. 已知问题与解决方案
 
-### 11.1 CRITICAL
+### 11.1 已修复
+
+| 问题 | 原因 | 解决方案 | 版本 |
+|------|------|----------|------|
+| 遮罩显示在微信窗口下方 | `SetWindowPos` 用目标句柄做 `hWndInsertAfter` 无法保证 Z-order；`TopMost=false` 与 `WS_EX_TOPMOST` 矛盾 | 重构 OverlayForm，统一使用 `HWND_TOPMOST` 置顶 | v1.0.1 |
+| 遮罩位置不同步 | `Show()` 每次重设 Location 但无位置变化检测 | 添加 100ms Timer 定期检测微信窗口位置并同步 | v1.0.1 |
+| DWM 模糊被 OnPaint 覆盖 | `OnPaint` 用不透明白色背景覆盖了 DWM 模糊 | 移除 `OnPaint` 自绘，改用纯 DWM 亚克力模糊 | v1.0.1 |
+| TopMost 属性矛盾 | 构造函数 `TopMost=false` 与 `CreateParams` 中 `WS_EX_TOPMOST` 冲突 | 移除 `CreateParams` 中 `WS_EX_TOPMOST`，统一用 `TopMost=true` | v1.0.1 |
+| WeChat 关闭后遮罩卡住 | 无后台监控 | 添加 `WeChatUnavailable` 事件 + 2s 轮询等待重启 | v1.0.1 |
+| 微信最小化时遮罩未隐藏 | 未检查 `IsIconic` | sync 定时器中检查最小化状态 | v1.0.1 |
+| 遮罩遮挡其他窗口 | `HWND_TOPMOST` 使遮罩在所有窗口之上 | 添加 `WindowFromPoint` 检测微信是否被遮挡 | v1.0.2 |
+| 鼠标悬停不隐藏遮罩 | 无鼠标位置检测 | 添加 `IsMouseOverWeChat` 检测，鼠标在微信区域时隐藏遮罩 | v1.0.2 |
+
+### 11.2 待修复
 
 | 问题 | 原因 | 解决方案 | 状态 |
 |------|------|----------|------|
-| 遮罩显示在微信窗口下方 | `SetWindowPos` 用目标句柄做 `hWndInsertAfter` 无法保证 Z-order；`TopMost=false` 与 `WS_EX_TOPMOST` 矛盾 | 重构 OverlayForm，统一使用 `HWND_TOPMOST` 置顶 | 待修复 |
-
-### 11.2 HIGH
-
-| 问题 | 原因 | 解决方案 | 状态 |
-|------|------|----------|------|
-| 遮罩位置不同步 | `Show()` 每次重设 Location 但无位置变化检测 | 添加 Timer 定期检测微信窗口位置并同步 | 待修复 |
-| DWM 模糊被 OnPaint 覆盖 | `OnPaint` 用不透明白色背景覆盖了 DWM 模糊 | 移除 `OnPaint` 自绘，改用纯 DWM 亚克力模糊 | 待修复 |
-| 快捷键未实现 | 功能缺失 | 使用 `RegisterHotKey` 注册全局快捷键 | 未实现 |
-
-### 11.3 MEDIUM
-
-| 问题 | 原因 | 解决方案 | 状态 |
-|------|------|----------|------|
-| WeChat 关闭后遮罩卡住 | 无后台监控 | 添加 Timer 定期检测 `IsWindow`，微信关闭时自动隐藏 | 待修复 |
 | DPI 缩放偏移 | 物理像素 vs 逻辑坐标 | 使用 `GetDpiForWindow` + `DpiHelper` 补偿 | 待修复 |
-| 设置面板未实现 | 功能缺失 | 创建 SettingsForm | 未实现 |
-| 开机自启未实现 | 功能缺失 | 写入 `HKCU\...\Run` 注册表 | 未实现 |
 
-### 11.4 LOW
+### 11.3 待实现
 
-| 问题 | 原因 | 解决方案 | 状态 |
-|------|------|----------|------|
-| 微信最小化时遮罩未隐藏 | 未检查 `IsIconic` | 在同步位置时检查最小化状态 | 待修复 |
-| 遮罩闪烁 | 检测频率过高 | 使用 50ms 间隔 + 变化检测 | 已处理 |
+| 功能 | 说明 | 状态 |
+|------|------|------|
+| 快捷键切换 | 使用 `RegisterHotKey` 注册 Ctrl+Shift+W 全局快捷键 | 未实现 |
+| 设置面板 | 创建 SettingsForm，支持透明度/模糊度/开机自启配置 | 未实现 |
+| 开机自启 | 写入 `HKCU\...\Run` 注册表 | 未实现 |
