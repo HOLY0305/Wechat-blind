@@ -12,6 +12,10 @@ internal sealed class OverlayForm : Form
     private int _blurAmount = 50;
     private Image? _patternImage;
     private double _patternOpacity = 1.0;
+    private Image[]? _gifFrames;
+    private int[]? _gifFrameDelays;
+    private int _currentFrameIndex;
+    private System.Windows.Forms.Timer? _gifTimer;
 
     public OverlayForm()
     {
@@ -93,12 +97,59 @@ internal sealed class OverlayForm : Form
     /// <param name="patternOpacity">图案透明度 0.0-1.0</param>
     public void SetPattern(Image? patternImage, double patternOpacity = 1.0)
     {
+        ReleaseGifResources();
+
         _patternImage = patternImage;
         _patternOpacity = patternOpacity;
 
         if (IsHandleCreated && Visible)
         {
             Invalidate();
+        }
+    }
+
+    /// <summary>
+    /// 设置 GIF 动效图案
+    /// </summary>
+    /// <param name="frames">GIF 各帧图片</param>
+    /// <param name="delays">各帧延迟（毫秒）</param>
+    public void SetGifPattern(Image[] frames, int[] delays)
+    {
+        ReleaseGifResources();
+
+        _gifFrames = frames;
+        _gifFrameDelays = delays;
+        _currentFrameIndex = 0;
+
+        if (frames.Length > 1 && delays.Length > 0)
+        {
+            EnsureGifTimerCreated();
+            _gifTimer!.Interval = Math.Max(delays[0], 10);
+            _gifTimer.Start();
+        }
+
+        if (IsHandleCreated && Visible)
+        {
+            Invalidate();
+        }
+    }
+
+    /// <summary>
+    /// 暂停 GIF 播放
+    /// </summary>
+    public void PauseGif()
+    {
+        _gifTimer?.Stop();
+    }
+
+    /// <summary>
+    /// 恢复 GIF 播放
+    /// </summary>
+    public void ResumeGif()
+    {
+        if (_gifFrames != null && _gifFrames.Length > 1 && _gifTimer != null)
+        {
+            _gifTimer.Start();
         }
     }
 
@@ -150,6 +201,10 @@ internal sealed class OverlayForm : Form
     {
         if (disposing)
         {
+            ReleaseGifResources();
+            _gifTimer?.Dispose();
+            _gifTimer = null;
+
             _patternImage?.Dispose();
             _patternImage = null;
         }
@@ -160,9 +215,12 @@ internal sealed class OverlayForm : Form
     {
         base.OnPaint(e);
 
-        if (_patternImage == null) return;
+        Image? imageToDraw = _gifFrames != null
+            ? _gifFrames[_currentFrameIndex]
+            : _patternImage;
 
-        // 使用图案透明度
+        if (imageToDraw == null) return;
+
         var matrix = new System.Drawing.Imaging.ColorMatrix
         {
             Matrix33 = (float)_patternOpacity,
@@ -171,15 +229,48 @@ internal sealed class OverlayForm : Form
         using var attributes = new System.Drawing.Imaging.ImageAttributes();
         attributes.SetColorMatrix(matrix);
 
-        // 绘制图案（平铺）
-        var imageRect = new Rectangle(0, 0, _patternImage.Width, _patternImage.Height);
         e.Graphics.DrawImage(
-            _patternImage,
+            imageToDraw,
             new Rectangle(0, 0, Width, Height),
             0, 0,
-            _patternImage.Width,
-            _patternImage.Height,
+            imageToDraw.Width,
+            imageToDraw.Height,
             GraphicsUnit.Pixel,
             attributes);
+    }
+
+    private void EnsureGifTimerCreated()
+    {
+        if (_gifTimer == null)
+        {
+            _gifTimer = new System.Windows.Forms.Timer();
+            _gifTimer.Tick += OnGifTimerTick;
+        }
+    }
+
+    private void OnGifTimerTick(object? sender, EventArgs e)
+    {
+        if (_gifFrames == null || _gifFrameDelays == null) return;
+
+        _currentFrameIndex = (_currentFrameIndex + 1) % _gifFrames.Length;
+        _gifTimer!.Interval = Math.Max(_gifFrameDelays[_currentFrameIndex], 10);
+        Invalidate();
+    }
+
+    private void ReleaseGifResources()
+    {
+        _gifTimer?.Stop();
+
+        if (_gifFrames != null)
+        {
+            foreach (var frame in _gifFrames)
+            {
+                frame.Dispose();
+            }
+            _gifFrames = null;
+        }
+
+        _gifFrameDelays = null;
+        _currentFrameIndex = 0;
     }
 }
