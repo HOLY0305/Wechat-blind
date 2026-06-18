@@ -1,3 +1,5 @@
+using System.Drawing.Imaging;
+using System.IO;
 using WechatBlind.Config;
 using WechatBlind.Core;
 using WechatBlind.UI;
@@ -219,18 +221,56 @@ internal sealed class AppContext : ApplicationContext
     /// </summary>
     private void UpdateOverlayPattern(AppSettings settings)
     {
+        if (settings.IsGifPattern && settings.PatternType == "CustomGif"
+            && !string.IsNullOrEmpty(settings.CustomPatternPath)
+            && File.Exists(settings.CustomPatternPath))
+        {
+            try
+            {
+                var frames = ExtractGifFrames(settings.CustomPatternPath);
+                var delays = PatternManager.GetGifFrameDelays(settings.CustomPatternPath);
+                _overlayManager.SetOverlayGifPattern(frames, delays, settings.PatternOpacity);
+            }
+            catch
+            {
+                _overlayManager.SetOverlayPattern(null, settings.PatternOpacity);
+            }
+            return;
+        }
+
         Image? patternImage = null;
 
-        if (settings.PatternType == "Preset" && Enum.TryParse<PatternManager.PresetPattern>(settings.PresetPattern, out var preset))
+        if (settings.PatternType == "Preset"
+            && Enum.TryParse<PatternManager.PresetPattern>(settings.PresetPattern, out var preset))
         {
-            patternImage = _patternManager.LoadPattern(new PatternInfo { Type = PatternType.Preset, Preset = preset });
+            patternImage = _patternManager.LoadPattern(
+                new PatternInfo { Type = PatternType.Preset, Preset = preset });
         }
         else if (settings.PatternType == "Custom" && !string.IsNullOrEmpty(settings.CustomPatternPath))
         {
-            patternImage = _patternManager.LoadPattern(new PatternInfo { Type = PatternType.Custom, FilePath = settings.CustomPatternPath });
+            patternImage = _patternManager.LoadPattern(
+                new PatternInfo { Type = PatternType.Custom, FilePath = settings.CustomPatternPath });
         }
 
         _overlayManager.SetOverlayPattern(patternImage, settings.PatternOpacity);
+    }
+
+    /// <summary>
+    /// 从 GIF 文件提取帧图片数组
+    /// </summary>
+    private static Image[] ExtractGifFrames(string filePath)
+    {
+        using var gifImage = Image.FromFile(filePath);
+        var frameCount = gifImage.GetFrameCount(FrameDimension.Time);
+        var frames = new Image[frameCount];
+
+        for (int i = 0; i < frameCount; i++)
+        {
+            gifImage.SelectActiveFrame(FrameDimension.Time, i);
+            frames[i] = (Image)gifImage.Clone();
+        }
+
+        return frames;
     }
 
     private void RegisterHotkey(HotKeySettings hotkey)
