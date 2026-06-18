@@ -128,7 +128,7 @@ internal partial class SettingsWindow : Window
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp|所有文件|*.*",
+            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.gif|所有文件|*.*",
             Title = "选择遮罩图案",
         };
         if (dlg.ShowDialog() != true) return;
@@ -171,6 +171,7 @@ internal partial class SettingsWindow : Window
             _settings.CustomPatternPath = sel.FilePath;
         }
         _settings.PatternOpacity = 1.0;
+        _settings.IsGifPattern = sel?.Type == PatternType.CustomGif;
 
         if (_pendingModifiers != 0 || _pendingVk != 0)
         {
@@ -325,6 +326,7 @@ internal partial class SettingsWindow : Window
             PresetPattern = sel?.Preset.ToString() ?? "None",
             CustomPatternPath = sel?.FilePath,
             PatternOpacity = 1.0,
+            IsGifPattern = sel?.Type == PatternType.CustomGif,
             AutoStart = TglAutoStart.IsChecked == true,
             HotKey = hotkey,
         };
