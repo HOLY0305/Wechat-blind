@@ -228,6 +228,35 @@ internal sealed class PatternManager : IDisposable
     }
 
     /// <summary>
+    /// 提取 GIF 各帧的延迟时间（毫秒）
+    /// </summary>
+    /// <param name="filePath">GIF 文件路径</param>
+    /// <returns>各帧延迟的毫秒数数组</returns>
+    /// <exception cref="FileNotFoundException">文件不存在</exception>
+    public static int[] GetGifFrameDelays(string filePath)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException("GIF file not found", filePath);
+
+        using var image = Image.FromFile(filePath);
+        var frameCount = image.GetFrameCount(FrameDimension.Time);
+
+        if (frameCount <= 1)
+            return new int[] { 100 }; // single frame default 100ms
+
+        var delayProperty = image.GetPropertyItem(0x5100); // PropertyTagFrameDelay
+        var delays = new int[frameCount];
+
+        for (int i = 0; i < frameCount; i++)
+        {
+            // GIF delay unit is 1/100 second, convert to milliseconds
+            delays[i] = BitConverter.ToInt32(delayProperty.Value, i * 4) * 10;
+        }
+
+        return delays;
+    }
+
+    /// <summary>
     /// 检测文件名是否为 GIF 格式
     /// </summary>
     public static bool IsGifFile(string fileName)
