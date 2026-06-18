@@ -150,6 +150,7 @@ internal sealed class OverlayManager : IDisposable
         {
             if (_overlayForm?.Visible == true)
             {
+                _overlayForm.PauseGif();
                 _overlayForm.Hide();
             }
             return;
@@ -160,6 +161,7 @@ internal sealed class OverlayManager : IDisposable
         {
             if (_overlayForm?.Visible == true)
             {
+                _overlayForm.PauseGif();
                 _overlayForm.Hide();
             }
             return;
@@ -170,6 +172,7 @@ internal sealed class OverlayManager : IDisposable
         {
             if (_overlayForm?.Visible == true)
             {
+                _overlayForm.PauseGif();
                 _overlayForm.Hide();
             }
             return;
@@ -180,6 +183,7 @@ internal sealed class OverlayManager : IDisposable
         {
             if (_overlayForm?.Visible == true)
             {
+                _overlayForm.PauseGif();
                 _overlayForm.Hide();
             }
             return;

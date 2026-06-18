@@ -231,8 +231,9 @@ internal sealed class AppContext : ApplicationContext
                 var delays = PatternManager.GetGifFrameDelays(settings.CustomPatternPath);
                 _overlayManager.SetOverlayGifPattern(frames, delays, settings.PatternOpacity);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Failed to load GIF pattern: {ex.Message}");
                 _overlayManager.SetOverlayPattern(null, settings.PatternOpacity);
             }
             return;

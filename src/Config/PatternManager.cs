@@ -81,9 +81,9 @@ internal sealed class PatternManager : IDisposable
                         FrameCount = delays.Length,
                     });
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // corrupted GIF file, skip
+                    System.Diagnostics.Debug.WriteLine($"Skipping corrupted GIF '{file}': {ex.Message}");
                 }
             }
         }
@@ -296,6 +296,9 @@ internal sealed class PatternManager : IDisposable
 
         if (frameCount <= 1)
             return new int[] { 100 }; // single frame default 100ms
+
+        if (!image.PropertyIdList.Contains(0x5100))
+            return new int[] { 100 }; // fallback for GIFs without delay property
 
         var delayProperty = image.GetPropertyItem(0x5100); // PropertyTagFrameDelay
         var delays = new int[frameCount];

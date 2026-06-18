@@ -145,7 +145,7 @@ internal partial class SettingsWindow : Window
     {
         if (_selectedPatternIndex < 0 || _selectedPatternIndex >= _patterns.Count) return;
         var p = _patterns[_selectedPatternIndex];
-        if (p.Type != PatternType.Custom) return;
+        if (p.Type != PatternType.Custom && p.Type != PatternType.CustomGif) return;
 
         if (System.Windows.MessageBox.Show($"确定删除 \"{p.Name}\"？", "确认",
             MessageBoxButton.YesNo) == MessageBoxResult.Yes)
@@ -202,7 +202,8 @@ internal partial class SettingsWindow : Window
         var cur = _patterns.FindIndex(p =>
             p.Type.ToString() == _settings.PatternType &&
             (p.Type != PatternType.Preset || p.Preset.ToString() == _settings.PresetPattern) &&
-            (p.Type != PatternType.Custom || p.FilePath == _settings.CustomPatternPath));
+            (p.Type != PatternType.Custom || p.FilePath == _settings.CustomPatternPath) &&
+            (p.Type != PatternType.CustomGif || p.FilePath == _settings.CustomPatternPath));
 
         if (cur >= 0)
         {
@@ -259,7 +260,8 @@ internal partial class SettingsWindow : Window
         if (index >= 0 && index < _patterns.Count)
         {
             _selectedPatternPath = _patterns[index].FilePath;
-            BtnDeletePattern.IsEnabled = _patterns[index].Type == PatternType.Custom;
+            BtnDeletePattern.IsEnabled = _patterns[index].Type == PatternType.Custom
+                || _patterns[index].Type == PatternType.CustomGif;
         }
     }
 
