@@ -54,6 +54,7 @@ internal sealed class OverlayManager : IDisposable
 
         SyncOverlayPosition(rect);
         _overlayForm!.ShowAboveWindow(_wechatHwnd);
+        _overlayForm.ResumeGif();
 
         // 强制刷新位置，确保第一次显示时大小正确
         ForceRefreshPosition();
@@ -98,6 +99,18 @@ internal sealed class OverlayManager : IDisposable
     }
 
     /// <summary>
+    /// 设置 GIF 动效遮罩图案
+    /// </summary>
+    public void SetOverlayGifPattern(Image[] frames, int[] delays, double patternOpacity = 1.0)
+    {
+        if (_overlayForm != null && !_overlayForm.IsDisposed)
+        {
+            _overlayForm.SetPattern(null, patternOpacity);
+            _overlayForm.SetGifPattern(frames, delays);
+        }
+    }
+
+    /// <summary>
     /// 隐藏遮罩
     /// </summary>
     public void Hide()
@@ -106,6 +119,7 @@ internal sealed class OverlayManager : IDisposable
 
         if (_overlayForm != null && _overlayForm.Visible)
         {
+            _overlayForm.PauseGif();
             _overlayForm.Hide();
         }
     }
