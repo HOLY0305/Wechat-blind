@@ -63,6 +63,29 @@ internal sealed class PatternManager : IDisposable
                     FilePath = file,
                 });
             }
+
+            // 添加自定义 GIF 图案
+            var gifFiles = Directory.GetFiles(_patternsPath, "*.gif");
+            foreach (var file in gifFiles)
+            {
+                try
+                {
+                    var delays = GetGifFrameDelays(file);
+                    patterns.Add(new PatternInfo
+                    {
+                        Name = Path.GetFileNameWithoutExtension(file),
+                        Type = PatternType.CustomGif,
+                        FilePath = file,
+                        IsAnimated = delays.Length > 1,
+                        FrameDelays = delays,
+                        FrameCount = delays.Length,
+                    });
+                }
+                catch
+                {
+                    // corrupted GIF file, skip
+                }
+            }
         }
 
         return patterns;
@@ -73,14 +96,22 @@ internal sealed class PatternManager : IDisposable
     /// </summary>
     public string SavePattern(string sourceFilePath, string patternName)
     {
-        var fileName = $"{SanitizeFileName(patternName)}.png";
-        var destPath = Path.Combine(_patternsPath, fileName);
+        if (IsGifFile(sourceFilePath))
+        {
+            var fileName = $"{SanitizeFileName(patternName)}.gif";
+            var destPath = Path.Combine(_patternsPath, fileName);
+            File.Copy(sourceFilePath, destPath, overwrite: true);
+            return destPath;
+        }
+
+        var pngFileName = $"{SanitizeFileName(patternName)}.png";
+        var pngDestPath = Path.Combine(_patternsPath, pngFileName);
 
         // 转换为 PNG 格式并保存
         using var image = Image.FromFile(sourceFilePath);
-        image.Save(destPath, ImageFormat.Png);
+        image.Save(pngDestPath, ImageFormat.Png);
 
-        return destPath;
+        return pngDestPath;
     }
 
     /// <summary>
