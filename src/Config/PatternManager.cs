@@ -165,6 +165,28 @@ internal sealed class PatternManager : IDisposable
             return image;
         }
 
+        if (pattern.Type == PatternType.CustomGif && !string.IsNullOrEmpty(pattern.FilePath)
+            && File.Exists(pattern.FilePath))
+        {
+            if (_imageCache.TryGetValue(pattern.FilePath, out var cached))
+            {
+                return cached.Image;
+            }
+
+            var bytes = File.ReadAllBytes(pattern.FilePath);
+            var stream = new MemoryStream(bytes);
+            var image = Image.FromStream(stream);
+
+            // For GIF: select first frame for preview
+            if (image.RawFormat.Guid == ImageFormat.Gif.Guid && image.GetFrameCount(FrameDimension.Time) > 1)
+            {
+                image.SelectActiveFrame(FrameDimension.Time, 0);
+            }
+
+            _imageCache[pattern.FilePath] = (image, stream);
+            return image;
+        }
+
         return null;
     }
 
