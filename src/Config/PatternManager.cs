@@ -227,6 +227,14 @@ internal sealed class PatternManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// 检测文件名是否为 GIF 格式
+    /// </summary>
+    public static bool IsGifFile(string fileName)
+    {
+        return Path.GetExtension(fileName).Equals(".gif", StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         foreach (var entry in _imageCache.Values)
