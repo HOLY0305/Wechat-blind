@@ -45,6 +45,11 @@ internal sealed class AppSettings
     public double PatternOpacity { get; set; } = 1.0;
 
     /// <summary>
+    /// 当前图案是否为 GIF 动图
+    /// </summary>
+    public bool IsGifPattern { get; set; } = false;
+
+    /// <summary>
     /// 是否开机自启
     /// </summary>
     public bool AutoStart { get; set; } = false;

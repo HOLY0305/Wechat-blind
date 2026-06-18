@@ -25,9 +25,9 @@ internal sealed class PatternManager : IDisposable
         Dots,
     }
 
-    public PatternManager()
+    public PatternManager(string? patternsPath = null)
     {
-        _patternsPath = Path.Combine(
+        _patternsPath = patternsPath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "WechatBlind",
             "patterns");
@@ -246,6 +246,7 @@ internal enum PatternType
     None,
     Preset,
     Custom,
+    CustomGif,
 }
 
 /// <summary>
@@ -257,4 +258,7 @@ internal sealed class PatternInfo
     public PatternType Type { get; set; }
     public PatternManager.PresetPattern Preset { get; set; }
     public string? FilePath { get; set; }
+    public bool IsAnimated { get; set; }
+    public int[]? FrameDelays { get; set; }
+    public int FrameCount { get; set; }
 }
