@@ -25,6 +25,11 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\assets\icon.ico" LogicalName="icon.ico" />
+    <EmbeddedResource Include="..\asset\遮罩图案\纯黑.png" LogicalName="patterns_pure_black.png" />
+    <EmbeddedResource Include="..\asset\遮罩图案\纯白.png" LogicalName="patterns_pure_white.png" />
+    <EmbeddedResource Include="..\asset\遮罩图案\臭_静.png" LogicalName="patterns_dog_static.png" />
+    <EmbeddedResource Include="..\asset\遮罩图案\臭.gif" LogicalName="patterns_dog.gif" />
+    <EmbeddedResource Include="..\asset\遮罩图案\欢呼.gif" LogicalName="patterns_cheer.gif" />
   </ItemGroup>
 
   <ItemGroup>

@@ -178,15 +178,8 @@ internal sealed class AppContext : ApplicationContext
         var window = new SettingsWindow(settings);
         window.SettingsSaved += OnSettingsSaved;
         window.SettingsChanged += OnSettingsChanged;
-
-        // WPF 窗口需要手动设置 Owner 才能正确作为模态对话框
-        var helper = new System.Windows.Interop.WindowInteropHelper(window);
-        helper.Owner = GetActiveWindow();
         window.ShowDialog();
     }
-
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
-    private static extern IntPtr GetActiveWindow();
 
     /// <summary>
     /// 设置实时变化时更新遮罩（用于实时预览）
@@ -257,6 +250,21 @@ internal sealed class AppContext : ApplicationContext
         if (settings.PatternType == "Preset"
             && Enum.TryParse<PatternManager.PresetPattern>(settings.PresetPattern, out var preset))
         {
+            if (_patternManager.IsGifPreset(preset))
+            {
+                try
+                {
+                    var (frames, delays) = _patternManager.LoadGifPresetFrames(preset);
+                    _overlayManager.SetOverlayGifPattern(frames, delays, settings.PatternOpacity);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to load GIF preset: {ex.Message}");
+                    _overlayManager.SetOverlayPattern(null, settings.PatternOpacity);
+                }
+                return;
+            }
+
             patternImage = _patternManager.LoadPattern(
                 new PatternInfo { Type = PatternType.Preset, Preset = preset });
         }
@@ -274,7 +282,9 @@ internal sealed class AppContext : ApplicationContext
     /// </summary>
     private static Image[] ExtractGifFrames(string filePath)
     {
-        using var gifImage = Image.FromFile(filePath);
+        var bytes = File.ReadAllBytes(filePath);
+        using var ms = new MemoryStream(bytes);
+        using var gifImage = Image.FromStream(ms);
         var frameCount = gifImage.GetFrameCount(FrameDimension.Time);
         var frames = new Image[frameCount];
 

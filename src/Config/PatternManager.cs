@@ -18,11 +18,11 @@ internal sealed class PatternManager : IDisposable
     public enum PresetPattern
     {
         None,
-        SolidBlack,
-        Gradient,
-        Checkerboard,
-        DiagonalLines,
-        Dots,
+        PureBlack,
+        PureWhite,
+        StaticDog,
+        AnimatedDog,
+        AnimatedCheer,
     }
 
     public PatternManager(string? patternsPath = null)
@@ -44,11 +44,11 @@ internal sealed class PatternManager : IDisposable
 
         // 添加预设图案
         patterns.Add(new PatternInfo { Name = "无图案", Type = PatternType.None });
-        patterns.Add(new PatternInfo { Name = "纯黑", Type = PatternType.Preset, Preset = PresetPattern.SolidBlack });
-        patterns.Add(new PatternInfo { Name = "渐变", Type = PatternType.Preset, Preset = PresetPattern.Gradient });
-        patterns.Add(new PatternInfo { Name = "棋盘格", Type = PatternType.Preset, Preset = PresetPattern.Checkerboard });
-        patterns.Add(new PatternInfo { Name = "斜线", Type = PatternType.Preset, Preset = PresetPattern.DiagonalLines });
-        patterns.Add(new PatternInfo { Name = "圆点", Type = PatternType.Preset, Preset = PresetPattern.Dots });
+        patterns.Add(new PatternInfo { Name = "纯黑", Type = PatternType.Preset, Preset = PresetPattern.PureBlack });
+        patterns.Add(new PatternInfo { Name = "纯白", Type = PatternType.Preset, Preset = PresetPattern.PureWhite });
+        patterns.Add(new PatternInfo { Name = "臭(静)", Type = PatternType.Preset, Preset = PresetPattern.StaticDog });
+        patterns.Add(new PatternInfo { Name = "臭", Type = PatternType.Preset, Preset = PresetPattern.AnimatedDog, IsAnimated = true });
+        patterns.Add(new PatternInfo { Name = "欢呼", Type = PatternType.Preset, Preset = PresetPattern.AnimatedCheer, IsAnimated = true });
 
         // 添加自定义图案
         if (Directory.Exists(_patternsPath))
@@ -119,7 +119,12 @@ internal sealed class PatternManager : IDisposable
     /// </summary>
     public bool DeletePattern(string patternName)
     {
-        var filePath = GetPatternFilePath(patternName);
+        // 尝试 .png 和 .gif 两种扩展名
+        var baseName = SanitizeFileName(patternName);
+        var pngPath = Path.Combine(_patternsPath, $"{baseName}.png");
+        var gifPath = Path.Combine(_patternsPath, $"{baseName}.gif");
+
+        var filePath = File.Exists(pngPath) ? pngPath : gifPath;
 
         if (_imageCache.TryGetValue(filePath, out var cached))
         {
@@ -191,73 +196,107 @@ internal sealed class PatternManager : IDisposable
     }
 
     /// <summary>
-    /// 创建预设图案
+    /// 判断预设是否为 GIF 动效
+    /// </summary>
+    public bool IsGifPreset(PresetPattern preset)
+    {
+        return preset is PresetPattern.AnimatedDog or PresetPattern.AnimatedCheer;
+    }
+
+    /// <summary>
+    /// 加载 GIF 预设的各帧图片和延迟
+    /// </summary>
+    public (Image[] Frames, int[] Delays) LoadGifPresetFrames(PresetPattern preset)
+    {
+        var resourceName = preset switch
+        {
+            PresetPattern.AnimatedDog => "patterns_dog.gif",
+            PresetPattern.AnimatedCheer => "patterns_cheer.gif",
+            _ => throw new ArgumentException($"Not a GIF preset: {preset}"),
+        };
+
+        using var stream = GetEmbeddedResourceStream(resourceName);
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        ms.Position = 0;
+
+        var gifImage = Image.FromStream(ms);
+        var frameCount = gifImage.GetFrameCount(FrameDimension.Time);
+        var frames = new Image[frameCount];
+
+        for (int i = 0; i < frameCount; i++)
+        {
+            gifImage.SelectActiveFrame(FrameDimension.Time, i);
+            frames[i] = (Image)gifImage.Clone();
+        }
+
+        // 从资源流重新读取延迟信息
+        ms.Position = 0;
+        using var delayImage = Image.FromStream(ms);
+        var delays = ExtractGifDelays(delayImage, frameCount);
+
+        gifImage.Dispose();
+        return (frames, delays);
+    }
+
+    private static int[] ExtractGifDelays(Image image, int frameCount)
+    {
+        if (frameCount <= 1) return new[] { 100 };
+
+        if (!image.PropertyIdList.Contains(0x5100))
+            return new[] { 100 };
+
+        var delayProperty = image.GetPropertyItem(0x5100)!;
+        if (delayProperty.Value == null || delayProperty.Value.Length < frameCount * 4)
+            return new[] { 100 };
+
+        var delays = new int[frameCount];
+        for (int i = 0; i < frameCount; i++)
+        {
+            var raw = BitConverter.ToUInt32(delayProperty.Value, i * 4);
+            delays[i] = (int)Math.Clamp(raw * 10, 10, 1000);
+        }
+        return delays;
+    }
+
+    /// <summary>
+    /// 从嵌入资源加载预设图案（静态图片返回 Image，GIF 返回第一帧预览）
     /// </summary>
     private Image CreatePresetPattern(PresetPattern preset)
     {
-        var width = 100;
-        var height = 100;
-        var bitmap = new Bitmap(width, height);
-
-        using var graphics = Graphics.FromImage(bitmap);
-
-        switch (preset)
+        var resourceName = preset switch
         {
-            case PresetPattern.SolidBlack:
-                graphics.Clear(Color.Black);
-                break;
+            PresetPattern.PureBlack => "patterns_pure_black.png",
+            PresetPattern.PureWhite => "patterns_pure_white.png",
+            PresetPattern.StaticDog => "patterns_dog_static.png",
+            PresetPattern.AnimatedDog => "patterns_dog.gif",
+            PresetPattern.AnimatedCheer => "patterns_cheer.gif",
+            _ => throw new ArgumentException($"Unknown preset: {preset}"),
+        };
 
-            case PresetPattern.Gradient:
-                using (var brush = new System.Drawing.Drawing2D.LinearGradientBrush(
-                    new Point(0, 0), new Point(width, height),
-                    Color.Black, Color.Transparent))
-                {
-                    graphics.FillRectangle(brush, 0, 0, width, height);
-                }
-                break;
+        using var stream = GetEmbeddedResourceStream(resourceName);
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        ms.Position = 0;
 
-            case PresetPattern.Checkerboard:
-                graphics.Clear(Color.Transparent);
-                var size = 10;
-                for (int x = 0; x < width; x += size)
-                {
-                    for (int y = 0; y < height; y += size)
-                    {
-                        if ((x / size + y / size) % 2 == 0)
-                        {
-                            graphics.FillRectangle(Brushes.Black, x, y, size, size);
-                        }
-                    }
-                }
-                break;
+        var image = Image.FromStream(ms);
 
-            case PresetPattern.DiagonalLines:
-                graphics.Clear(Color.Transparent);
-                using (var pen = new Pen(Color.Black, 2))
-                {
-                    for (int i = -height; i < width + height; i += 10)
-                    {
-                        graphics.DrawLine(pen, i, 0, i + height, height);
-                    }
-                }
-                break;
-
-            case PresetPattern.Dots:
-                graphics.Clear(Color.Transparent);
-                using (var brush = new SolidBrush(Color.Black))
-                {
-                    for (int x = 5; x < width; x += 10)
-                    {
-                        for (int y = 5; y < height; y += 10)
-                        {
-                            graphics.FillEllipse(brush, x - 2, y - 2, 4, 4);
-                        }
-                    }
-                }
-                break;
+        // GIF 预设：返回第一帧作为静态预览
+        if (image.RawFormat.Guid == ImageFormat.Gif.Guid && image.GetFrameCount(FrameDimension.Time) > 1)
+        {
+            image.SelectActiveFrame(FrameDimension.Time, 0);
         }
 
-        return bitmap;
+        return (Image)image.Clone();
+    }
+
+    private static Stream GetEmbeddedResourceStream(string logicalName)
+    {
+        var assembly = typeof(PatternManager).Assembly;
+        var stream = assembly.GetManifestResourceStream(logicalName);
+        if (stream == null)
+            throw new FileNotFoundException($"Embedded resource '{logicalName}' not found.");
+        return stream;
     }
 
     private string GetPatternFilePath(string patternName)
@@ -291,7 +330,9 @@ internal sealed class PatternManager : IDisposable
         if (!File.Exists(filePath))
             throw new FileNotFoundException("GIF file not found", filePath);
 
-        using var image = Image.FromFile(filePath);
+        var bytes = File.ReadAllBytes(filePath);
+        using var ms = new MemoryStream(bytes);
+        using var image = Image.FromStream(ms);
         var frameCount = image.GetFrameCount(FrameDimension.Time);
 
         if (frameCount <= 1)
