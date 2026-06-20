@@ -260,6 +260,14 @@ internal sealed class OverlayManager : IDisposable
             return false;
         }
 
+        // 中心点处的窗口与微信同进程（如 Tauri WebView 子窗口）→ 未被遮挡
+        Win32Api.GetWindowThreadProcessId(windowAtCenter, out uint centerPid);
+        Win32Api.GetWindowThreadProcessId(_wechatHwnd, out uint wechatPid);
+        if (centerPid == wechatPid)
+        {
+            return false;
+        }
+
         return true;
     }
 

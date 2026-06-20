@@ -76,6 +76,12 @@ internal sealed class AppContext : ApplicationContext
                 _overlayManager.Show();
             }
         }
+
+        // 在 overlay 创建后加载图案、透明度和模糊设置
+        var settings = _settingsManager.GetSettings();
+        UpdateOverlayPattern(settings);
+        _overlayManager.SetOverlayOpacity(settings.Opacity);
+        _overlayManager.SetOverlayBlur(settings.BlurAmount);
     }
 
     private void OnFocusChanged(object? sender, bool focused)
@@ -125,6 +131,10 @@ internal sealed class AppContext : ApplicationContext
             {
                 _overlayManager.Show();
             }
+            var settings = _settingsManager.GetSettings();
+            UpdateOverlayPattern(settings);
+            _overlayManager.SetOverlayOpacity(settings.Opacity);
+            _overlayManager.SetOverlayBlur(settings.BlurAmount);
         }
 
         _trayManager.ShowBalloonTip(
@@ -150,6 +160,9 @@ internal sealed class AppContext : ApplicationContext
             {
                 _overlayManager.Show();
             }
+            UpdateOverlayPattern(settings);
+            _overlayManager.SetOverlayOpacity(settings.Opacity);
+            _overlayManager.SetOverlayBlur(settings.BlurAmount);
         }
         else
         {

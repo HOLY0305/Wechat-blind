@@ -619,9 +619,31 @@ main (稳定版本)
 | WeChat 关闭后遮罩卡住 | 无后台监控 | 添加 `WeChatUnavailable` 事件 + 2s 轮询等待重启 | v1.0.1 |
 | 微信最小化时遮罩未隐藏 | 未检查 `IsIconic` | sync 定时器中检查最小化状态 | v1.0.1 |
 | 遮罩遮挡其他窗口 | `HWND_TOPMOST` 使遮罩在所有窗口之上 | 添加 `WindowFromPoint` 检测微信是否被遮挡 | v1.0.2 |
+| Tauri 微信遮罩不显示 | `IsWeChatCovered` 的 `WindowFromPoint` 检测到微信自身的 `WRY_WEBVIEW` 子窗口（同进程、同位置），误判为被遮挡 | `IsWeChatCovered` 增加进程 ID 比对，同进程子窗口不算遮挡 | v1.0.4 |
 | 鼠标悬停不隐藏遮罩 | 无鼠标位置检测 | 添加 `IsMouseOverWeChat` 检测 | v1.0.2 |
 
-### 11.2 已实现
+### 11.2 调试记录：Tauri 微信遮罩不显示
+
+**日期**: 2026-06-20
+**现象**: 应用启动后微信窗口无遮罩显示，切换焦点无效果
+**排查过程**:
+
+1. **设置文件干扰**: 用户曾测试 GIF 功能，settings.json 中 `PatternType` 被保存为 `"CustomGif"`。原始代码不认识此类型，图案加载静默失败。重置设置后问题依旧。
+
+2. **代码对比**: 对比远程工作版本（`eb7c01e`）与当前分支，核心遮罩逻辑（`OverlayForm`、`OverlayManager`、`AppContext`）完全一致，排除代码回归。
+
+3. **添加调试日志**: 在 `AppContext.Start()`、`FocusMonitor.OnFocusChanged`、`OverlayManager.Show()`、`IsWeChatCovered()` 添加 `Console.WriteLine`，定位到 `Show() exit: WeChat covered`。
+
+4. **窗口检测工具**: 编写 `tools/WindowChecker` 识别遮挡窗口，发现：
+   - 微信主窗口: `hwnd=788196`, `rect=(1188,8,1528,908)`
+   - 中心点窗口: `hwnd=1180220`, 类名 `WRY_WEBVIEW`, 进程 `clyde`
+   - **两者位置完全重叠**，`clyde` 是 Tauri 框架的 WebView 进程
+
+5. **根因**: `IsWeChatCovered()` 使用 `WindowFromPoint` 检测微信中心点是否有其他窗口。Tauri 版微信（`WeChatAppEx.exe`）创建的 `WRY_WEBVIEW` 子窗口与主窗口位置完全一致，被误判为"其他应用遮挡"。
+
+**修复**: `IsWeChatCovered` 增加进程 ID 比对——通过 `GetWindowThreadProcessId` 获取中心点窗口和微信窗口的 PID，同进程则视为微信自身窗口，不算遮挡。
+
+### 11.3 已实现（已修复）
 
 | 功能 | 说明 | 版本 |
 |------|------|------|
@@ -630,7 +652,7 @@ main (稳定版本)
 | 开机自启 | `AutoStartManager` 写入 `HKCU\...\Run` 注册表 | v1.0.3 |
 | 启动时遮罩大小修复 | 使用 `ForceRefreshPosition()` 强制刷新位置 | v1.0.3 |
 
-### 11.3 待实现（产品美化 v2）
+### 11.4 待实现（产品美化 v2）
 
 | 功能 | 说明 | 优先级 | 状态 |
 |------|------|--------|------|
