@@ -178,6 +178,9 @@ internal static class Win32Api
     [DllImport(User32, SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
+    [DllImport(User32, SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
     #endregion
 
     #region 快捷键

@@ -103,11 +103,10 @@ internal sealed class OverlayManager : IDisposable
     /// </summary>
     public void SetOverlayGifPattern(Image[] frames, int[] delays, double patternOpacity = 1.0)
     {
-        if (_overlayForm != null && !_overlayForm.IsDisposed)
-        {
-            _overlayForm.SetPattern(null, patternOpacity);
-            _overlayForm.SetGifPattern(frames, delays);
-        }
+        if (_overlayForm == null || _overlayForm.IsDisposed) return;
+
+        _overlayForm.SetPattern(null, patternOpacity);
+        _overlayForm.SetGifPattern(frames, delays);
     }
 
     /// <summary>
@@ -213,6 +212,7 @@ internal sealed class OverlayManager : IDisposable
         if (_overlayForm?.Visible != true && !Win32Api.IsIconic(_wechatHwnd))
         {
             _overlayForm?.ShowAboveWindow(_wechatHwnd);
+            _overlayForm?.ResumeGif();
         }
     }
 
@@ -268,7 +268,25 @@ internal sealed class OverlayManager : IDisposable
             return false;
         }
 
-        return true;
+        // 检查遮挡窗口是否可见
+        if (!Win32Api.IsWindowVisible(windowAtCenter))
+        {
+            return false;
+        }
+
+        // 检查遮挡窗口是否在微信窗口区域内（排除跨显示器的情况）
+        if (!Win32Api.GetWindowRect(windowAtCenter, out var centerRect))
+        {
+            return false;
+        }
+
+        // 检查两个窗口是否实际重叠
+        bool overlaps = rect.Left < centerRect.Right &&
+                        rect.Right > centerRect.Left &&
+                        rect.Top < centerRect.Bottom &&
+                        rect.Bottom > centerRect.Top;
+
+        return overlaps;
     }
 
     private bool EnsureWeChatValid()
@@ -284,7 +302,7 @@ internal sealed class OverlayManager : IDisposable
 
     private bool EnsureWeChatVisible()
     {
-        return _detector.IsWindowVisible(_wechatHwnd);
+        return Win32Api.IsWindowVisible(_wechatHwnd) && !Win32Api.IsIconic(_wechatHwnd);
     }
 
     private void EnsureOverlayCreated()

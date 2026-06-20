@@ -17,6 +17,9 @@ internal sealed class OverlayForm : Form
     private int _currentFrameIndex;
     private System.Windows.Forms.Timer? _gifTimer;
 
+    // GIF 播放速度倍率（0.25 = 4倍速，1.0 = 原速）
+    private const double GifSpeedFactor = 0.25;
+
     public OverlayForm()
     {
         FormBorderStyle = FormBorderStyle.None;
@@ -124,7 +127,7 @@ internal sealed class OverlayForm : Form
         if (frames.Length > 1 && delays.Length > 0)
         {
             EnsureGifTimerCreated();
-            _gifTimer!.Interval = Math.Max(delays[0], 10);
+            _gifTimer!.Interval = Math.Clamp((int)(delays[0] * GifSpeedFactor), 10, 1000);
             _gifTimer.Start();
         }
 
@@ -147,8 +150,9 @@ internal sealed class OverlayForm : Form
     /// </summary>
     public void ResumeGif()
     {
-        if (_gifFrames != null && _gifFrames.Length > 1 && _gifTimer != null)
+        if (_gifFrames != null && _gifFrameDelays != null && _gifFrames.Length > 1 && _gifTimer != null)
         {
+            _gifTimer.Interval = Math.Clamp((int)(_gifFrameDelays[_currentFrameIndex] * GifSpeedFactor), 10, 1000);
             _gifTimer.Start();
         }
     }
@@ -253,7 +257,7 @@ internal sealed class OverlayForm : Form
         if (_gifFrames == null || _gifFrameDelays == null) return;
 
         _currentFrameIndex = (_currentFrameIndex + 1) % _gifFrames.Length;
-        _gifTimer!.Interval = Math.Max(_gifFrameDelays[_currentFrameIndex], 10);
+        _gifTimer!.Interval = Math.Clamp((int)(_gifFrameDelays[_currentFrameIndex] * GifSpeedFactor), 10, 1000);
         Invalidate();
     }
 

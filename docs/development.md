@@ -643,7 +643,30 @@ main (稳定版本)
 
 **修复**: `IsWeChatCovered` 增加进程 ID 比对——通过 `GetWindowThreadProcessId` 获取中心点窗口和微信窗口的 PID，同进程则视为微信自身窗口，不算遮挡。
 
-### 11.3 已实现（已修复）
+### 11.3 调试记录：GIF 修复后遮罩仍不显示 + GIF 速度异常
+
+**日期**: 2026-06-20
+**现象**: 修复 Tauri 遮挡问题后，遮罩仍然不显示；GIF 播放速度慢于原始速度
+
+**排查过程**:
+
+1. **添加文件日志**: 在 `OverlayManager.Show()` 和 `IsWeChatCovered()` 添加写文件日志（`debug.log`），因为 `Console.WriteLine` 输出不可见。
+
+2. **第一次日志**: `IsWeChatCovered: topWnd=1573746, class=CASCADIA_HOSTING_WINDOW_CLASS, title=✳ replace-app-icons`，PID 不同（`centerPid=36092, wechatPid=32376`）。判断为 Windows Terminal 遮挡微信。
+
+3. **用户反馈看不到遮挡窗口**: 怀疑多显示器下 `WindowFromPoint` 误报。添加窗口可见性检查和矩形重叠检查，过滤跨显示器的无关窗口。
+
+4. **第二次日志**: `EnsureWeChatVisible: visible=False, class=Tauri Window, title=Codex++ 管理工具`。**检测到的不是微信，而是另一个 Tauri 应用**！`"Tauri Window"` 类名太通用，匹配到了其他 Tauri 程序。
+
+5. **根因**: `WindowDetector.WeChatClassNames` 包含 `"Tauri Window"`，但这是 Tauri 框架的通用类名，所有 Tauri 应用都使用。`FindWeChatWindow()` 优先按类名匹配，匹配到 `Codex++ 管理工具` 后直接返回，未检查是否为微信。
+
+6. **第三次日志**（修复后）: 正确检测到 `class=Qt51514QWindowIcon, title=微信`，遮罩正常显示。
+
+**修复**:
+- 从 `WeChatClassNames` 中移除 `"Tauri Window"`（通用类名不可靠），Tauri 微信通过 `FindWeChatWindowByProcess` 的进程名匹配兜底
+- `IsWeChatCovered` 增加窗口可见性检查和矩形重叠检查，避免多显示器误报
+
+### 11.4 已实现（已修复）
 
 | 功能 | 说明 | 版本 |
 |------|------|------|

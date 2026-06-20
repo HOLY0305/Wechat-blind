@@ -59,7 +59,9 @@ internal sealed class FocusMonitor : IDisposable
 
     public bool IsFocused()
     {
-        return _isWeChatFocused;
+        // 直接检查当前前台窗口，不依赖缓存状态
+        var foregroundWindow = Win32Api.GetForegroundWindow();
+        return foregroundWindow == _wechatHwnd;
     }
 
     private void OnTimerTick(object? sender, EventArgs e)

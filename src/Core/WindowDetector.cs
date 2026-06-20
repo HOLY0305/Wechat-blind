@@ -16,7 +16,6 @@ internal sealed class WindowDetector
     /// </summary>
     private static readonly string[] WeChatClassNames = new[]
     {
-        "Tauri Window",         // 最新版微信（Tauri 框架）
         "Qt51514QWindowIcon",   // 微信（Qt 框架）
         "WeChatMainWndForPC",   // 旧版微信
         "WeChat",

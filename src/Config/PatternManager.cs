@@ -300,13 +300,18 @@ internal sealed class PatternManager : IDisposable
         if (!image.PropertyIdList.Contains(0x5100))
             return new int[] { 100 }; // fallback for GIFs without delay property
 
-        var delayProperty = image.GetPropertyItem(0x5100); // PropertyTagFrameDelay
+        PropertyItem delayProperty = image.GetPropertyItem(0x5100)!; // PropertyTagFrameDelay
+        if (delayProperty.Value == null || delayProperty.Value.Length < frameCount * 4)
+            return new int[] { 100 }; // fallback for malformed GIF
+
         var delays = new int[frameCount];
 
         for (int i = 0; i < frameCount; i++)
         {
             // GIF delay unit is 1/100 second, convert to milliseconds
-            delays[i] = BitConverter.ToInt32(delayProperty.Value, i * 4) * 10;
+            // Use unsigned read; clamp to [10ms, 1000ms] for safety
+            var raw = BitConverter.ToUInt32(delayProperty.Value, i * 4);
+            delays[i] = (int)Math.Clamp(raw * 10, 10, 1000);
         }
 
         return delays;
